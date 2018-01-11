@@ -1,14 +1,7 @@
-import React from "react";
-import { Table } from "reactjs-components";
-
 import { formatResource } from "#SRC/js/utils/Units";
 import Util from "#SRC/js/utils/Util";
 
-import {
-  getColumnClassNameFn,
-  getColumnHeadingFn,
-  getDisplayValue
-} from "../utils/ServiceConfigDisplayUtil";
+import { getDisplayValue } from "../utils/ServiceConfigDisplayUtil";
 import ServiceConfigBaseSectionDisplay from "./ServiceConfigBaseSectionDisplay";
 
 class ServiceStorageConfigSection extends ServiceConfigBaseSectionDisplay {
@@ -31,160 +24,114 @@ class ServiceStorageConfigSection extends ServiceConfigBaseSectionDisplay {
     return "CreateService:ServiceConfigDisplay:App:Storage";
   }
 
+  getVolumeSizeValue(value, type = null) {
+    if (value == null) {
+      return getDisplayValue(value);
+    }
+
+    if (type === "EXTERNAL") {
+      // External volumes specify size in GiB
+      value = value * 1024;
+    }
+
+    return formatResource("disk", value);
+  }
+
   /**
    * @override
    */
   getDefinition() {
-    const { onEditClick } = this.props;
+    const { appConfig } = this.props;
 
-    return {
+    if (appConfig.container.volumes == null) {
+      return null;
+    }
+
+    const volumes = appConfig.container.volumes;
+    const config = {
       tabViewID: "volumes",
       values: [
         {
-          key: "container.volumes",
-          heading: "Storage",
+          heading: "Volumes",
           headingLevel: 1
-        },
-        {
-          key: "container.volumes",
-          render(volumes) {
-            if (volumes == null) {
-              return null;
-            }
-
-            const columns = [
-              {
-                heading: getColumnHeadingFn("Volume"),
-                prop: "volume",
-                render(prop, row) {
-                  let name = "";
-
-                  if (row.name != null) {
-                    name = ` (${row.name})`;
-                  }
-
-                  return `${row.type.join(" ")}${name}`;
-                },
-                className: getColumnClassNameFn(),
-                sortable: true
-              },
-              {
-                heading: getColumnHeadingFn("Size"),
-                prop: "size",
-                render(prop, row) {
-                  let value = row[prop];
-
-                  if (value == null) {
-                    return getDisplayValue(value, row.isHostVolume);
-                  }
-
-                  if (row.type.join(" ") === "External" && !row.isHostVolume) {
-                    // External volumes specify size in GiB
-                    value = value * 1024;
-                  }
-
-                  return formatResource("disk", value);
-                },
-                className: getColumnClassNameFn(),
-                sortable: true
-              },
-              {
-                heading: getColumnHeadingFn("Mode"),
-                prop: "mode",
-                className: getColumnClassNameFn(),
-                sortable: true
-              },
-              {
-                heading: getColumnHeadingFn("Container Mount Path"),
-                prop: "containerPath",
-                className: getColumnClassNameFn(),
-                sortable: true
-              }
-            ];
-
-            let shouldDisplayHostPath = false;
-
-            const volumesData = volumes.map(appVolume => {
-              // We don't want to mutate the appVolume value.
-              const volume = {
-                name: null,
-                size: null,
-                type: [],
-                isHostVolume: false
-              };
-
-              volume.containerPath = appVolume.containerPath;
-              volume.mode = appVolume.mode;
-
-              if (appVolume.persistent != null) {
-                volume.size = appVolume.persistent.size;
-                volume.type.push("Persistent", "Local");
-              } else if (appVolume.external != null) {
-                volume.size = appVolume.external.size;
-                volume.type.push("External");
-              } else {
-                volume.isHostVolume = true;
-                volume.type.push("Host", "Volume");
-              }
-
-              if (appVolume.external != null) {
-                volume.name = appVolume.external.name;
-              }
-
-              if (appVolume.hostPath != null) {
-                // Set this flag to true so that we render the hostPath column.
-                shouldDisplayHostPath = true;
-              }
-
-              volume.hostPath = getDisplayValue(
-                appVolume.hostPath,
-                !volume.isHostVolume
-              );
-
-              return volume;
-            });
-
-            if (shouldDisplayHostPath) {
-              columns.push({
-                heading: getColumnHeadingFn("Host Path"),
-                prop: "hostPath",
-                className: getColumnClassNameFn(),
-                sortable: true
-              });
-            }
-
-            if (onEditClick) {
-              columns.push({
-                heading() {
-                  return null;
-                },
-                className: "configuration-map-action",
-                prop: "edit",
-                render() {
-                  return (
-                    <a
-                      className="button button-link flush table-display-on-row-hover"
-                      onClick={onEditClick.bind(null, "volumes")}
-                    >
-                      Edit
-                    </a>
-                  );
-                }
-              });
-            }
-
-            return (
-              <Table
-                key="service-volumes"
-                className="table table-flush table-borderless-outer table-borderless-inner-columns vertical-align-top table-break-word table-fixed-layout flush-bottom"
-                columns={columns}
-                data={volumesData}
-              />
-            );
-          }
         }
       ]
     };
+
+    volumes.forEach((volume, index) => {
+      const configHeading = {
+        heading: null,
+        headingLevel: 2
+      };
+      const configName = {
+        key: null,
+        label: "NAME"
+      };
+      const configContainerPath = {
+        key: null,
+        label: "CONTAINER PATH"
+      };
+      const configSize = {
+        key: null,
+        label: "SIZE",
+        transformValue: null
+      };
+
+      if (volume.persistent != null && volume.persistent.profileName != null) {
+        // DSS
+        configHeading.heading = "DC/OS Storage Service";
+        configName.key = `container.volumes.${index}.persistent.profileName`;
+        configName.name = "PROFILE NAME";
+        configContainerPath.key = `container.volumes.${index}.containerPath`;
+        configSize.key = `container.volumes.${index}.persistent.size`;
+        configSize.transformValue = this.getVolumeSizeValue;
+
+        config.values.push(
+          configHeading,
+          configName,
+          configContainerPath,
+          configSize
+        );
+      } else if (volume.persistent != null) {
+        // Local Persistent
+        configHeading.heading = "Local Persistent Volume";
+        configName.key = null;
+        configName.name = null;
+        configContainerPath.key = `container.volumes.${index}.containerPath`;
+        configSize.key = `container.volumes.${index}.persistent.size`;
+        configSize.transformValue = this.getVolumeSizeValue;
+
+        config.values.push(configHeading, configContainerPath, configSize);
+      } else if (volume.external != null) {
+        // External
+        configHeading.heading = "External Persistent Volume";
+        configName.key = `container.volumes.${index}.external.name`;
+        configContainerPath.key = `container.volumes.${index}.containerPath`;
+        configSize.key = `container.volumes.${index}.external.size`;
+        configSize.transformValue = value => {
+          this.getVolumeSizeValue(value, "EXTERNAL");
+        };
+
+        config.values.push(
+          configHeading,
+          configName,
+          configContainerPath,
+          configSize
+        );
+      } else {
+        // host
+        configHeading.heading = "Host Volume";
+        configName.key = null;
+        configName.name = null;
+        configContainerPath.key = `container.volumes.${index}.containerPath`;
+        configSize.key = null;
+        configSize.transformValue = null;
+
+        config.values.push(configHeading, configContainerPath);
+      }
+    });
+
+    return config;
   }
 }
 
