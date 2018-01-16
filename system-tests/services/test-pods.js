@@ -16,7 +16,7 @@ describe("Services", function() {
       });
     });
 
-    it("should create a simple pod", function() {
+    it("creates a simple pod", function() {
       const serviceName = "pod-with-inline-shell-script";
       const command = "while true ; do echo 'test' ; sleep 100 ;";
 
@@ -184,7 +184,7 @@ describe("Services", function() {
       cy.root().getFormGroupInputFor("Command").contains(command);
     });
 
-    it("should create a pod with multiple containers", function() {
+    it("creates a pod with multiple containers", function() {
       const serviceName = "pod-with-multiple-containers";
       const cmdline = "while true; do echo 'test' ; sleep 100 ; done";
 
@@ -464,7 +464,7 @@ describe("Services", function() {
       cy.root().getFormGroupInputFor("Command").contains(cmdline);
     });
 
-    it("should create a pod with service address", function() {
+    it("creates a pod with service address", function() {
       const serviceName = "pod-with-service-address";
       const command = "python3 -m http.server 8080";
       const containerImage = "python:3";
@@ -730,7 +730,7 @@ describe("Services", function() {
       //   .click();
     });
 
-    it("should create a pod with artifacts", function() {
+    it("creates a pod with artifacts", function() {
       const serviceName = "pod-with-artifacts";
       const command = "while true ; do echo 'test' ; sleep 100 ; done";
 
@@ -960,7 +960,7 @@ describe("Services", function() {
         .should("have.value", "http://lorempicsum.com/simpsons/600/400/3");
     });
 
-    it("should create a pod with virtual network", function() {
+    it("creates a pod with virtual network", function() {
       const serviceName = "pod-with-virtual-network";
       const command = "python3 -m http.server 8080";
       const containerImage = "python:3";
@@ -1196,7 +1196,7 @@ describe("Services", function() {
         .should("have.value", "http");
     });
 
-    it("should create a pod with ephemeral volume", function() {
+    it("creates a pod with ephemeral volume", function() {
       const serviceName = "pod-with-ephemeral-volume";
       const command = "`while true ; do echo 'test' ; sleep 100 ; done";
 
@@ -1408,7 +1408,7 @@ describe("Services", function() {
         .should("have.value", "test");
     });
 
-    it("should create a pod with environment variable", function() {
+    it("creates a pod with environment variable", function() {
       const serviceName = "pod-with-environment-variable";
       const command = "`while true ; do echo 'test' ; sleep 100 ; done";
 
@@ -1666,7 +1666,7 @@ describe("Services", function() {
       cy.root().get('input[name="env.3.value"]').should("have.value", "test");
     });
 
-    it("should create a pod with labels", function() {
+    it("creates a pod with labels", function() {
       const serviceName = "pod-with-labels";
       const cmdline = "while true; do echo 'test' ; sleep 100 ; done";
       const containerName = "container-1";
@@ -1906,7 +1906,7 @@ describe("Services", function() {
       cy.get('input[name="labels.3.value"]').should("have.value", "test");
     });
 
-    it.skip("should create a pod with communicating services", function() {
+    it.skip("creates a pod with communicating services", function() {
       const serviceName = "pod-with-communicating-services";
       const searchString = "Thank you for using nginx";
 
